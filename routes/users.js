@@ -11,7 +11,8 @@ router.get('/', function(req, res, next) {
   });
 });
 
-router.post('/login', authController.login)
-router.post('/register', authController.registerUser)
+router.post('/login', authController.login);
+router.post('/register', authController.registerUser);
+router.post('/refreshtoken', authController.refreshToken);
 
 module.exports = router;
