@@ -5,5 +5,6 @@ const authMiddleware = require('../middleware/auth.middleware')
 
 
 router.get('/getAllInquiryDetails', authMiddleware, authController.getInquiryDetails);
+router.post('/saveInquiryDetails', authMiddleware, authController.saveInquiryDetails);
 
 module.exports = router;

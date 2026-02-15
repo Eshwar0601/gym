@@ -6,8 +6,8 @@
     try {
         const token = authHeader.split(' ')[1]
         const decoded = jwt.verify(token, 'SAMPLE_SECRET');
-        // if(!checkIfValueIsEmpty(decoded) && !checkIfValueIsEmpty(decoded.userId)) {
-            const listOfInquiries = await Inquiry.find({createdUser: decoded.userId}).exec();
+        // if(!checkIfValueIsEmpty(decoded) && !checkIfValueIsEmpty(decoded.id)) {
+            const listOfInquiries = await Inquiry.find({createdUser: decoded.id}).exec();
             return res.status(200).json({
                 data: listOfInquiries
             })
@@ -58,11 +58,14 @@ exports.saveInquiryDetails = async (req, res) => {
     try {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+        console.log("token ", decoded);
 
         const isInquiryExists = await Inquiry.findOne({email: email});
         if(isInquiryExists) {
             return res.status(400).json({ message: "Inquiry with this email already exists" })
         }
+
+        console.log("created User", decoded.id)
 
         const newInquiry = await Inquiry.create({
             fullName: fullName,
@@ -75,7 +78,7 @@ exports.saveInquiryDetails = async (req, res) => {
             packageType: packageType,
             followUpDate: followUpDate,
             remarks: remarks,
-            createdUser: decoded.userId,
+            createdUser: decoded.id,
             createdDate: new Date()
         });
 

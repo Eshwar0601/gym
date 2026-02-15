@@ -108,13 +108,13 @@ exports.refreshToken = (req, res) => {
             'SAMPLE_SECRET'
         )
         const newAccessToken = jwt.sign(
-            { userId: decoded.userId },
+            { userId: decoded.id },
             'SAMPLE_SECRET',
             { expiresIn: '30m' }
         )
 
         const newRefreshToken = jwt.sign(
-            { userId: decoded.userId },
+            { userId: decoded.id },
             'SAMPLE_SECRET',
             { expiresIn: '60m' }
         )
