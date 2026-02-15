@@ -93,4 +93,32 @@ exports.saveInquiryDetails = async (req, res) => {
     }
 }
 
+exports.deleteInquiryDetail = async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const { inquiryId } = req.body;
+
+    if (checkIfValueIsEmpty(inquiryId)) {
+        return res.status(400).json({
+            message: "inquiryId cannot be empty"
+        });
+    }
+
+    try {
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+        const deleted = await Inquiry.findOneAndDelete({ _id: inquiryId, createdUser: decoded.id }).exec();
+        if (!deleted) {
+            return res.status(404).json({ message: "Inquiry not found or not authorized to delete" });
+        }
+
+        return res.status(200).json({ message: "Inquiry deleted successfully" });
+    } catch (error) {
+        return res.status(500).json({
+            error: error.message
+        })
+    }
+}
+
 const checkIfValueIsEmpty = (value) => (value === '' || value === null || value === undefined);
