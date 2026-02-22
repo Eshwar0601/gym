@@ -32,6 +32,16 @@ const memberDetailsSchema = new mongoose.Schema({
   packageType: {
     type: String
   },
+  plan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PlanDetail'
+  },
+  planStartDate: {
+    type: Date
+  },
+  planEndDate: {
+    type: Date
+  },
   dueDate: {
     type: Date
   },
