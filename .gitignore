@@ -1,0 +1,29 @@
+# Dependencies
+/node_modules
+
+# Environment variables
+.env
+.env.local
+
+# Compiled output (if applicable)
+/dist
+/build
+/out-tsc
+
+# Logs and databases
+npm-debug.log
+yarn-error.log
+/coverage
+*.sqlite
+*.sqlite-journal
+*.db
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+/.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
