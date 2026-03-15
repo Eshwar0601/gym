@@ -9,7 +9,7 @@ const memberDetailsSchema = new mongoose.Schema({
   fullName: {
     type: String,
     required: true
-  },
+  },  
   email: {
     type: String,
     required: true
@@ -29,16 +29,12 @@ const memberDetailsSchema = new mongoose.Schema({
   occupation: {
     type: String
   },
-  package: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'MemberPackageDetail'
-  },
-  packageStartDate: {
-    type: Date
-  },
-  packageEndDate: {
-    type: Date
-  },
+  // packageStartDate: {
+  //   type: Date
+  // },
+  // packageEndDate: {
+  //   type: Date
+  // },
   dueDate: {
     type: Date
   },
@@ -83,9 +79,9 @@ const memberDetailsSchema = new mongoose.Schema({
   time: {
     type: String
   },
-  paidDate: {
-    type: Date
-  },
+  // paidDate: {
+  //   type: Date
+  // },
   createdUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

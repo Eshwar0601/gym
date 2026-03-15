@@ -1,6 +1,22 @@
  const Inquiry = require('../models/inquiry.model');
  const jwt = require('jsonwebtoken');
 
+ const mapInquiryToResponse = (inq) => ({
+    _id: inq._id,
+    fullName: inq.fullName,
+    email: inq.email,
+    mobileNumber: inq.mobileNumber,
+    gender: inq.gender,
+    dateOfBirth: inq.dateOfBirth,
+    inquiryDate: inq.inquiryDate,
+    occupation: inq.occupation || '',
+    packageType: inq.packageType || '',
+    followUpDate: inq.followUpDate || null,
+    remarks: inq.remarks || '',
+    createdUser: inq.createdUser,
+    createdDate: inq.createdDate
+ });
+
  exports.getInquiryDetails = async (req, res) => {
     const authHeader = req.headers.authorization;
     try {
@@ -8,8 +24,9 @@
         const decoded = jwt.verify(token, 'SAMPLE_SECRET');
         // if(!checkIfValueIsEmpty(decoded) && !checkIfValueIsEmpty(decoded.id)) {
             const listOfInquiries = await Inquiry.find({createdUser: decoded.id}).exec();
+            const inquiriesWithDefaults = listOfInquiries.map(mapInquiryToResponse);
             return res.status(200).json({
-                data: listOfInquiries
+                data: inquiriesWithDefaults
             })
         // }
 
@@ -21,9 +38,95 @@
     }
 }
 
+exports.fetchInquiryByUniqueId = async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const { uniqueId } = req.body;
+
+    if (checkIfValueIsEmpty(uniqueId)) {
+        return res.status(400).json({ message: "uniqueId cannot be empty" });
+    }
+
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+        const inquiry = await Inquiry.findOne({
+            createdUser: decoded.id,
+            $or: [{ _id: uniqueId }, { email: uniqueId }]
+        }).exec();
+
+        if (!inquiry) {
+            return res.status(404).json({ message: "Inquiry not found" });
+        }
+
+        return res.status(200).json({
+            data: mapInquiryToResponse(inquiry)
+        });
+    } catch(error) {
+        return res.status(500).json({
+            error: error.message
+        });
+    }
+}
+
+exports.updateInquiryByUniqueId = async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const {
+        uniqueId,
+        fullName,
+        email,
+        mobileNumber,
+        gender,
+        dateOfBirth,
+        occupation,
+        packageType,
+        followUpDate,
+        remarks
+    } = req.body;
+
+    if (checkIfValueIsEmpty(uniqueId)) {
+        return res.status(400).json({ message: "uniqueId cannot be empty" });
+    }
+
+    try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+        const updateData = {};
+        if (fullName !== undefined) updateData.fullName = fullName;
+        if (email !== undefined) updateData.email = email;
+        if (mobileNumber !== undefined) updateData.mobileNumber = mobileNumber;
+        if (gender !== undefined) updateData.gender = gender;
+        if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+        if (occupation !== undefined) updateData.occupation = occupation;
+        if (packageType !== undefined) updateData.packageType = packageType;
+        if (followUpDate !== undefined) updateData.followUpDate = followUpDate;
+        if (remarks !== undefined) updateData.remarks = remarks;
+
+        const updatedInquiry = await Inquiry.findOneAndUpdate(
+            { createdUser: decoded.id, $or: [{ _id: uniqueId }, { email: uniqueId }] },
+            updateData,
+            { new: true }
+        ).exec();
+
+        if (!updatedInquiry) {
+            return res.status(404).json({ message: "Inquiry not found" });
+        }
+
+        return res.status(200).json({
+            data: mapInquiryToResponse(updatedInquiry)
+        });
+    } catch(error) {
+        return res.status(500).json({
+            error: error.message
+        });
+    }
+}
+
 exports.saveInquiryDetails = async (req, res) => {
     const authHeader = req.headers.authorization;
-    const {fullName, email, mobileNumber, gender, dateOfBirth, occupation, packageType, followUpDate, remarks} = req.body;
+    // Set defaults for optional fields to ensure they're always present
+    const {fullName, email, mobileNumber, gender, dateOfBirth, occupation = '', packageType = '', followUpDate = null, remarks = ''} = req.body;
 
     if(checkIfValueIsEmpty(fullName)) {
         return res.status(400).json({

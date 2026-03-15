@@ -6,6 +6,12 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Get all packages for the authenticated user
 router.get('/getPackageDetails', authMiddleware, packageController.getPackageDetails);
 
+// Fetch a specific package by uniqueId
+router.post('/fetchPackageByUniqueId', authMiddleware, packageController.fetchPackageByUniqueId);
+
+// Update a package by uniqueId
+router.put('/updatePackageByUniqueId', authMiddleware, packageController.updatePackageByUniqueId);
+
 // Create a new package
 router.post('/savePackageDetails', authMiddleware, packageController.savePackageDetails);
 

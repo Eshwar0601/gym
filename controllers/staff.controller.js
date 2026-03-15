@@ -1,6 +1,17 @@
 const StaffDetail = require('../models/staff.model');
 const jwt = require('jsonwebtoken');
 
+const mapStaffToResponse = (staff) => ({
+  _id: staff._id,
+  staffName: staff.staffName,
+  email: staff.email,
+  phoneNumber: staff.phoneNumber,
+  expertise: staff.expertise || '',
+  staffRating: staff.staffRating || null,
+  createdUser: staff.createdUser,
+  createdDate: staff.createdDate
+});
+
 exports.getStaffDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
   try {
@@ -12,8 +23,9 @@ exports.getStaffDetails = async (req, res) => {
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
     const listOfStaff = await StaffDetail.find({ createdUser: decoded.id }).exec();
+    const staffWithDefaults = listOfStaff.map(mapStaffToResponse);
     return res.status(200).json({
-      data: listOfStaff
+      data: staffWithDefaults
     });
   } catch (error) {
     return res.status(500).json({
@@ -22,9 +34,84 @@ exports.getStaffDetails = async (req, res) => {
   }
 };
 
+exports.fetchStaffByUniqueId = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const { uniqueId } = req.body;
+
+  if (checkIfValueIsEmpty(uniqueId)) {
+    return res.status(400).json({ message: "uniqueId cannot be empty" });
+  }
+
+  try {
+    if (!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+    const staff = await StaffDetail.findOne({
+      createdUser: decoded.id,
+      $or: [{ _id: uniqueId }, { email: uniqueId }]
+    }).exec();
+
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    return res.status(200).json({
+      data: mapStaffToResponse(staff)
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateStaffByUniqueId = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const { uniqueId, staffName, email, phoneNumber, expertise, staffRating } = req.body;
+
+  if (checkIfValueIsEmpty(uniqueId)) {
+    return res.status(400).json({ message: "uniqueId cannot be empty" });
+  }
+
+  try {
+    if (!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+    const updateData = {};
+    if (staffName !== undefined) updateData.staffName = staffName;
+    if (email !== undefined) updateData.email = email;
+    if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+    if (expertise !== undefined) updateData.expertise = expertise;
+    if (staffRating !== undefined) updateData.staffRating = staffRating;
+
+    const updatedStaff = await StaffDetail.findOneAndUpdate(
+      { createdUser: decoded.id, $or: [{ _id: uniqueId }, { email: uniqueId }] },
+      updateData,
+      { new: true }
+    ).exec();
+
+    if (!updatedStaff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    return res.status(200).json({
+      data: mapStaffToResponse(updatedStaff)
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 exports.saveStaffDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { staffName, email, phoneNumber, expertise, staffRating } = req.body;
+  // Set defaults for optional fields to ensure they're always present
+  const { staffName, email, phoneNumber, expertise = '', staffRating = null } = req.body;
 
   if (checkIfValueIsEmpty(staffName)) {
     return res.status(400).json({ message: "staffName cannot be empty" });
