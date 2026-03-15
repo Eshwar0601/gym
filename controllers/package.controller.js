@@ -1,7 +1,7 @@
-const PlanDetail = require('../models/plan.model');
+const PackageDetail = require('../models/package.model');
 const jwt = require('jsonwebtoken');
 
-exports.getPlanDetails = async (req, res) => {
+exports.getPackageDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
   try {
     if (!authHeader) {
@@ -11,9 +11,9 @@ exports.getPlanDetails = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
-    const listOfPlans = await PlanDetail.find({ createdUser: decoded.id }).exec();
+    const listOfPackages = await PackageDetail.find({ createdUser: decoded.id }).exec();
     return res.status(200).json({
-      data: listOfPlans
+      data: listOfPackages
     });
   } catch (error) {
     return res.status(500).json({
@@ -22,13 +22,13 @@ exports.getPlanDetails = async (req, res) => {
   }
 };
 
-exports.savePlanDetails = async (req, res) => {
+exports.savePackageDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { planName, fee, isActive } = req.body;
+  const { packageName, fee, isActive, startDate, endDate, remarks, discount, discountedPrice, duration } = req.body;
 
-  if (checkIfValueIsEmpty(planName)) {
+  if (checkIfValueIsEmpty(packageName)) {
     return res.status(400).json({
-      message: "planName cannot be empty"
+      message: "packageName cannot be empty"
     });
   }
 
@@ -46,17 +46,23 @@ exports.savePlanDetails = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
-    const newPlan = await PlanDetail.create({
-      planName,
+    const newPackage = await PackageDetail.create({
+      packageName,
       fee,
       isActive: isActive !== undefined ? isActive : true,
+      startDate,
+      endDate,
+      remarks,
+      discount,
+      discountedPrice,
+      duration,
       createdUser: decoded.id,
       createdDate: new Date()
     });
 
     return res.status(200).json({
-      message: "Plan saved successfully",
-      data: newPlan
+      message: "Package saved successfully",
+      data: newPackage
     });
   } catch (error) {
     return res.status(500).json({
@@ -65,13 +71,13 @@ exports.savePlanDetails = async (req, res) => {
   }
 };
 
-exports.deletePlanDetail = async (req, res) => {
+exports.deletePackageDetail = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { planId } = req.body;
+  const { packageId } = req.body;
 
-  if (checkIfValueIsEmpty(planId)) {
+  if (checkIfValueIsEmpty(packageId)) {
     return res.status(400).json({
-      message: "planId cannot be empty"
+      message: "packageId cannot be empty"
     });
   }
 
@@ -83,12 +89,12 @@ exports.deletePlanDetail = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
-    const deleted = await PlanDetail.findOneAndDelete({ _id: planId, createdUser: decoded.id }).exec();
+    const deleted = await PackageDetail.findOneAndDelete({ _id: packageId, createdUser: decoded.id }).exec();
     if (!deleted) {
-      return res.status(404).json({ message: "Plan not found or not authorized to delete" });
+      return res.status(404).json({ message: "Package not found or not authorized to delete" });
     }
 
-    return res.status(200).json({ message: "Plan deleted successfully" });
+    return res.status(200).json({ message: "Package deleted successfully" });
   } catch (error) {
     return res.status(500).json({
       error: error.message

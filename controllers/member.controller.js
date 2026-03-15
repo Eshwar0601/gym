@@ -1,4 +1,5 @@
 const MemberDetail = require('../models/member.model');
+const MemberPackageDetails = require('../models/memberPackageDetails.model');
 const jwt = require('jsonwebtoken');
 
 exports.getMemberDetails = async (req, res) => {
@@ -33,7 +34,12 @@ exports.saveMemberDetails = async (req, res) => {
     gender,
     inquiryDate,
     occupation,
-    packageType,
+    package,
+    packageName,
+    amount,
+    packageActualFee,
+    packageStartDate,
+    packageEndDate,
     dueDate,
     remarks,
     joinDate,
@@ -102,8 +108,8 @@ exports.saveMemberDetails = async (req, res) => {
       return res.status(400).json({ message: "Member with this email already exists" });
     }
 
-    console.log("created User", decoded.id);
 
+    console.log("created User", decoded.id);
     const newMember = await MemberDetail.create({
       memberNo,
       fullName,
@@ -112,7 +118,9 @@ exports.saveMemberDetails = async (req, res) => {
       dateOfBirth,
       inquiryDate: inquiryDate || new Date(),
       occupation,
-      packageType,
+      package,
+      packageStartDate,
+      packageEndDate,
       dueDate,
       remarks,
       gender,
@@ -131,6 +139,19 @@ exports.saveMemberDetails = async (req, res) => {
       createdUser: decoded.id,
       createdDate: new Date()
     });
+
+    const newMemberDetailsPackage = await MemberPackageDetails.create({
+      memberNo,
+      memberID : newMember._id,
+      masterPackageId: package,
+      packageName,
+      fee : packageActualFee,
+      remarks,
+      discountedPrice: amount,
+      createdUser: decoded.id,
+      createdDate: new Date()
+    });
+
 
     return res.status(200).json({
       message: "Member saved successfully"

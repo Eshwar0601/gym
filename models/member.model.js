@@ -29,17 +29,14 @@ const memberDetailsSchema = new mongoose.Schema({
   occupation: {
     type: String
   },
-  packageType: {
-    type: String
-  },
-  plan: {
+  package: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'PlanDetail'
+    ref: 'MemberPackageDetail'
   },
-  planStartDate: {
+  packageStartDate: {
     type: Date
   },
-  planEndDate: {
+  packageEndDate: {
     type: Date
   },
   dueDate: {

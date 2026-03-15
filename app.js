@@ -12,7 +12,8 @@ var inquiryRouter = require('./routes/inquiry');
 var membersRouter = require('./routes/members');
 var staffRouter = require('./routes/staff');
 var miscMasterRouter = require('./routes/miscMaster');
-var planRouter = require('./routes/plan');
+var packageRouter = require('./routes/package');
+var memberDetailsPackage = require('./routes/memberPackageDetails');
 
 var app = express();
 
@@ -46,7 +47,8 @@ app.use('/inquiry', inquiryRouter);
 app.use('/members', membersRouter);
 app.use('/staff', staffRouter);
 app.use('/miscMaster', miscMasterRouter);
-app.use('/plan', planRouter);
+app.use('/package', packageRouter);
+app.use('/memberDetailsPackage', packageRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
