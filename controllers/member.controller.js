@@ -180,15 +180,32 @@ exports.updateMemberByUniqueId = async (req, res) => {
     if (time !== undefined) updateData.time = time;
     if (paidDate !== undefined) updateData.paidDate = paidDate;
 
+    // Find the member first
+    const member = await MemberDetail.findOne({
+      createdUser: decoded.id,
+      $or: [{ _id: uniqueId }, { memberNo: uniqueId }]
+    }).exec();
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Check for duplicate memberNo if it's being updated
+    if (memberNo !== undefined && memberNo !== member.memberNo) {
+      const existingMember = await MemberDetail.findOne({
+        memberNo: memberNo,
+        createdUser: decoded.id
+      }).exec();
+      if (existingMember) {
+        return res.status(400).json({ message: "Member number already exists" });
+      }
+    }
+
     const updatedMember = await MemberDetail.findOneAndUpdate(
-      { createdUser: decoded.id, $or: [{ _id: uniqueId }, { memberNo: uniqueId }] },
+      { _id: member._id, createdUser: decoded.id },
       updateData,
       { new: true }
     ).exec();
-
-    if (!updatedMember) {
-      return res.status(404).json({ message: "Member not found" });
-    }
 
     // Fetch member package details for this member
     const memberPackageDetails = await MemberPackageDetails.find({

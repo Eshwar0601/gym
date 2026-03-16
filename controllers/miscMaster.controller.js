@@ -2,11 +2,8 @@ const MiscMaster = require('../models/miscMaster.model');
 const jwt = require('jsonwebtoken');
 
 const mapMiscMasterToResponse = (misc) => ({
-  _id: misc._id,
   headerType: misc.headerType,
   keyValuePairs: misc.keyValuePairs || [],
-  createdUser: misc.createdUser,
-  createdDate: misc.createdDate
 });
 
 exports.getMiscMaster = async (req, res) => {
@@ -26,15 +23,29 @@ exports.getMiscMaster = async (req, res) => {
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
     const miscMasters = await MiscMaster.find({
-      createdUser: decoded.id,
       headerType: { $in: headerTypes }
     }).exec();
 
-    // Map to ensure all fields are present with defaults
-    const miscWithDefaults = miscMasters.map(mapMiscMasterToResponse);
+    // Group by headerType and combine keyValuePairs
+    const grouped = {};
+    miscMasters.forEach(misc => {
+      if (!grouped[misc.headerType]) {
+        grouped[misc.headerType] = {
+          headerType: misc.headerType,
+          keyValuePairs: []
+        };
+      }
+      // Add keyValuePairs without _id
+      grouped[misc.headerType].keyValuePairs.push(...(misc.keyValuePairs || []).map(kvp => ({
+        key: kvp.key,
+        value: kvp.value
+      })));
+    });
+
+    const data = Object.values(grouped);
 
     return res.status(200).json({
-      data: miscWithDefaults
+      data: data
     });
   } catch (error) {
     return res.status(500).json({
