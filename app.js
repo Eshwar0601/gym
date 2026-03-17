@@ -48,7 +48,7 @@ app.use('/members', membersRouter);
 app.use('/staff', staffRouter);
 app.use('/miscMaster', miscMasterRouter);
 app.use('/package', packageRouter);
-app.use('/memberDetailsPackage', packageRouter);
+app.use('/memberDetailsPackage', memberDetailsPackage);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

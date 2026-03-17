@@ -139,6 +139,7 @@ exports.saveMemberPackageDetails = async (req, res) => {
   const { memberNo,
       memberID = null,
       packageName,
+      masterPackageId,
       fee,
       isActive = true,
       startDate = null,
