@@ -356,7 +356,7 @@ exports.saveMemberDetails = async (req, res) => {
 
 exports.deleteMemberDetail = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { memberId } = req.body;
+  const { memberId } = req.query;
 
   if (checkIfValueIsEmpty(memberId)) {
     return res.status(400).json({
@@ -373,9 +373,11 @@ exports.deleteMemberDetail = async (req, res) => {
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
     const deleted = await MemberDetail.findOneAndDelete({ _id: memberId, createdUser: decoded.id }).exec();
+     
     if (!deleted) {
       return res.status(404).json({ message: "Member not found or not authorized to delete" });
     }
+    await MemberPackageDetails.deleteMany({ memberID: memberId, createdUser: decoded.id})
 
     return res.status(200).json({ message: "Member deleted successfully" });
   } catch (error) {

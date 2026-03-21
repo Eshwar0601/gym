@@ -197,7 +197,11 @@ exports.saveMemberPackageDetails = async (req, res) => {
 
 exports.deleteMemberPackageDetail = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { packageId } = req.body;
+  const { packageId } = req.query;
+
+  console.log(req.query);
+  console.log(req.query.packageId);
+  console.log(packageId);
 
   if (checkIfValueIsEmpty(packageId)) {
     return res.status(400).json({
