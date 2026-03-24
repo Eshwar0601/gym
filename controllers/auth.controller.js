@@ -76,12 +76,12 @@ exports.login = async (req, res) => {
             const token = jwt.sign(
                 { id: user._id },
                 'SAMPLE_SECRET',
-                { expiresIn: '30m' }
+                { expiresIn: '24h' }
             );
             const refreshToken = jwt.sign(
                 { id: user._id },
                 'SAMPLE_SECRET',
-                { expiresIn: '60m' }
+                { expiresIn: '30h' }
             )
             return res.status(200).json({
                 token,
@@ -110,13 +110,13 @@ exports.refreshToken = (req, res) => {
         const newAccessToken = jwt.sign(
             { userId: decoded.id },
             'SAMPLE_SECRET',
-            { expiresIn: '30m' }
+            { expiresIn: '24h' }
         )
 
         const newRefreshToken = jwt.sign(
             { userId: decoded.id },
             'SAMPLE_SECRET',
-            { expiresIn: '60m' }
+            { expiresIn: '30h' }
         )
 
         return res.status(200).json({
