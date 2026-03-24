@@ -12,11 +12,11 @@ const memberDetailsSchema = new mongoose.Schema({
   },  
   email: {
     type: String,
-    required: true
+    required: false
   },
   mobileNumber: {
     type: String,
-    required: true
+    required: false
   },
   dateOfBirth: {
     type: Date,

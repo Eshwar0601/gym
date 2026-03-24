@@ -263,17 +263,17 @@ exports.saveMemberDetails = async (req, res) => {
     });
   }
 
-  if (checkIfValueIsEmpty(email)) {
-    return res.status(400).json({
-      message: "email cannot be empty"
-    });
-  }
+  // if (checkIfValueIsEmpty(email)) {
+  //   return res.status(400).json({
+  //     message: "email cannot be empty"
+  //   });
+  // }
 
-  if (checkIfValueIsEmpty(mobileNumber)) {
-    return res.status(400).json({
-      message: "mobileNumber cannot be empty"
-    });
-  }
+  // if (checkIfValueIsEmpty(mobileNumber)) {
+  //   return res.status(400).json({
+  //     message: "mobileNumber cannot be empty"
+  //   });
+  // }
 
   if (checkIfValueIsEmpty(dateOfBirth)) {
     return res.status(400).json({
