@@ -297,10 +297,10 @@ exports.saveMemberDetails = async (req, res) => {
     console.log("token ", decoded);
 
     // Check if member already exists
-    const isMemberExists = await MemberDetail.findOne({ email: email });
-    if (isMemberExists) {
-      return res.status(400).json({ message: "Member with this email already exists" });
-    }
+    // const isMemberExists = await MemberDetail.findOne({ email: email });
+    // if (isMemberExists) {
+    //   return res.status(400).json({ message: "Member with this email already exists" });
+    // }
 
 
     console.log("created User", decoded.id);
