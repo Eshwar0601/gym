@@ -1,8 +1,9 @@
 const MemberDetail = require('../models/member.model');
 const MemberPackageDetails = require('../models/memberPackageDetails.model');
+const MemberTrainerDetails = require('../models/memberTrainerDetais.model');
 const jwt = require('jsonwebtoken');
 
-const mapMemberToResponse = (mem, memberPackageDetails = []) => ({
+const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetails = []) => ({
   _id: mem._id,
   memberNo: mem.memberNo,
   fullName: mem.fullName,
@@ -12,6 +13,7 @@ const mapMemberToResponse = (mem, memberPackageDetails = []) => ({
   inquiryDate: mem.inquiryDate,
   occupation: mem.occupation || '',
   memberPackageDetails: memberPackageDetails,
+  memberTrainerDetails: memberTrainerDetails,
   dueDate: mem.dueDate || null,
   remarks: mem.remarks || '',
   gender: mem.gender,
@@ -58,11 +60,27 @@ exports.getMemberDetails = async (req, res) => {
       }
       packageDetailsMap[memberId].push(pkg);
     });
+
+    const memberTrainerDetails = await MemberTrainerDetails.find({
+      memberID: { $in: memberIds },
+      createdUser: decoded.id
+    }).exec();
+
+    const trainerDetailsMap = {};
+    memberTrainerDetails.forEach(trainer => {
+      const memberId = trainer.memberID ? trainer.memberID.toString() : null;
+      if (!memberId) return;
+      if (!trainerDetailsMap[memberId]) {
+        trainerDetailsMap[memberId] = [];
+      }
+      trainerDetailsMap[memberId].push(trainer);
+    });
     
     const membersWithDefaults = listOfMembers.map(mem => {
       const memberId = mem._id.toString();
       const packages = packageDetailsMap[memberId] || [];
-      return mapMemberToResponse(mem, packages);
+      const trainers = trainerDetailsMap[memberId] || [];
+      return mapMemberToResponse(mem, packages, trainers);
     });
     
     return res.status(200).json({
@@ -106,8 +124,13 @@ exports.fetchMemberByUniqueId = async (req, res) => {
       createdUser: decoded.id
     }).exec();
 
+    const memberTrainerDetails = await MemberTrainerDetails.find({
+      memberID: member._id,
+      createdUser: decoded.id
+    }).exec();
+
     return res.status(200).json({
-      data: mapMemberToResponse(member, memberPackageDetails)
+      data: mapMemberToResponse(member, memberPackageDetails, memberTrainerDetails)
     });
   } catch (error) {
     return res.status(500).json({
@@ -207,14 +230,19 @@ exports.updateMemberByUniqueId = async (req, res) => {
       { new: true }
     ).exec();
 
-    // Fetch member package details for this member
+    // Fetch member package and trainer details for this member
     const memberPackageDetails = await MemberPackageDetails.find({
       memberID: updatedMember._id,
       createdUser: decoded.id
     }).exec();
 
+    const memberTrainerDetails = await MemberTrainerDetails.find({
+      memberID: updatedMember._id,
+      createdUser: decoded.id
+    }).exec();
+
     return res.status(200).json({
-      data: mapMemberToResponse(updatedMember, memberPackageDetails)
+      data: mapMemberToResponse(updatedMember, memberPackageDetails, memberTrainerDetails)
     });
   } catch (error) {
     return res.status(500).json({
@@ -344,7 +372,7 @@ exports.saveMemberDetails = async (req, res) => {
 
 
     return res.status(200).json({
-      data: mapMemberToResponse(newMember, []),
+      data: mapMemberToResponse(newMember, [], []),
       message: "Member saved successfully"
     });
   } catch (error) {
@@ -377,7 +405,9 @@ exports.deleteMemberDetail = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: "Member not found or not authorized to delete" });
     }
-    await MemberPackageDetails.deleteMany({ memberID: memberId, createdUser: decoded.id})
+    await MemberPackageDetails.deleteMany({ memberID: memberId, createdUser: decoded.id});
+
+    await MemberTrainerDetails.deleteMany({ memberID: memberId, createdUser: decoded.id})
 
     return res.status(200).json({ message: "Member deleted successfully" });
   } catch (error) {
