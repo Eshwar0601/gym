@@ -3,30 +3,27 @@ const mongoose = require('mongoose')
 const inquirySchema = new mongoose.Schema({
     fullName: {
         type: String,
-        required: true,
-        unique: true
+        required: true
+    },
+    mobileNumber: {
+        type: String,
+        required: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true
-    },
-    mobileNumber: {
-        type: Number,
-        required: true,
-        unique: true
+        required: false
     },
     gender: {
         type: String,
-        required: true
+        required: false
     },
     dateOfBirth: {
         type: Date,
-        required: true
+        required: false
     },
     inquiryDate: {
         type: Date,
-        required: true
+        required: false
     },
     occupation: {
         type: String,
@@ -45,12 +42,13 @@ const inquirySchema = new mongoose.Schema({
         required: false
     },
     createdUser: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     createdDate: {
         type: Date,
-        required: true
+        default: Date.now
     }
 })
 

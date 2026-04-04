@@ -4,17 +4,18 @@
  const mapInquiryToResponse = (inq) => ({
     _id: inq._id,
     fullName: inq.fullName,
-    email: inq.email,
+    email: inq.email || '',
     mobileNumber: inq.mobileNumber,
-    gender: inq.gender,
-    dateOfBirth: inq.dateOfBirth,
-    inquiryDate: inq.inquiryDate,
+    gender: inq.gender || '',
+    dateOfBirth: inq.dateOfBirth || null,
+    inquiryDate: inq.inquiryDate || null,
     occupation: inq.occupation || '',
     packageType: inq.packageType || '',
     followUpDate: inq.followUpDate || null,
     remarks: inq.remarks || '',
     createdUser: inq.createdUser,
-    createdDate: inq.createdDate
+    createdDate: inq.createdDate,
+    createdTimestamp: inq.createdTimestamp
  });
 
  exports.getInquiryDetails = async (req, res) => {
@@ -52,7 +53,7 @@ exports.fetchInquiryByUniqueId = async (req, res) => {
 
         const inquiry = await Inquiry.findOne({
             createdUser: decoded.id,
-            $or: [{ _id: uniqueId }, { email: uniqueId }]
+            $or: [{ _id: uniqueId }, { mobileNumber: uniqueId }]
         }).exec();
 
         if (!inquiry) {
@@ -69,10 +70,10 @@ exports.fetchInquiryByUniqueId = async (req, res) => {
     }
 }
 
-exports.updateInquiryByUniqueId = async (req, res) => {
+exports.updateInquiryByInquiryId = async (req, res) => {
     const authHeader = req.headers.authorization;
     const {
-        uniqueId,
+        inquiryId,
         fullName,
         email,
         mobileNumber,
@@ -83,9 +84,10 @@ exports.updateInquiryByUniqueId = async (req, res) => {
         followUpDate,
         remarks
     } = req.body;
+    console.log("sssssssssssssssssssssssssss", req.body);
 
-    if (checkIfValueIsEmpty(uniqueId)) {
-        return res.status(400).json({ message: "uniqueId cannot be empty" });
+    if (checkIfValueIsEmpty(inquiryId)) {
+        return res.status(400).json({ message: "inquiryId cannot be empty" });
     }
 
     try {
@@ -104,7 +106,7 @@ exports.updateInquiryByUniqueId = async (req, res) => {
         if (remarks !== undefined) updateData.remarks = remarks;
 
         const updatedInquiry = await Inquiry.findOneAndUpdate(
-            { createdUser: decoded.id, $or: [{ _id: uniqueId }, { email: uniqueId }] },
+            { createdUser: decoded.id, $or: [{ _id: inquiryId }] },
             updateData,
             { new: true }
         ).exec();
@@ -126,17 +128,11 @@ exports.updateInquiryByUniqueId = async (req, res) => {
 exports.saveInquiryDetails = async (req, res) => {
     const authHeader = req.headers.authorization;
     // Set defaults for optional fields to ensure they're always present
-    const {fullName, email, mobileNumber, gender, dateOfBirth, occupation = '', packageType = '', followUpDate = null, remarks = ''} = req.body;
+    const {fullName, mobileNumber, email = '', gender = '', dateOfBirth = null, occupation = '', packageType = '', followUpDate = null, remarks = ''} = req.body;
 
     if(checkIfValueIsEmpty(fullName)) {
         return res.status(400).json({
             message : "fullName cannot be empty"
-        });
-    }
-
-    if(checkIfValueIsEmpty(email)) {
-        return res.status(400).json({
-            message : "email cannot be empty"
         });
     }
 
@@ -145,35 +141,18 @@ exports.saveInquiryDetails = async (req, res) => {
             message : "mobileNumber cannot be empty"
         });
     }
-
-    if(checkIfValueIsEmpty(gender)) {
-        return res.status(400).json({
-            message : "gender cannot be empty"
-        });
-    }
-
-    if(checkIfValueIsEmpty(dateOfBirth)) {
-        return res.status(400).json({
-            message : "dateOfBirth cannot be empty"
-        });
-    }
     
     try {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, 'SAMPLE_SECRET');
         console.log("token ", decoded);
 
-        const isInquiryExists = await Inquiry.findOne({email: email});
-        if(isInquiryExists) {
-            return res.status(400).json({ message: "Inquiry with this email already exists" })
-        }
-
         console.log("created User", decoded.id)
 
         const newInquiry = await Inquiry.create({
             fullName: fullName,
-            email: email,
             mobileNumber: mobileNumber,
+            email: email,
             gender: gender,
             dateOfBirth: dateOfBirth,
             inquiryDate: new Date(),
@@ -182,11 +161,12 @@ exports.saveInquiryDetails = async (req, res) => {
             followUpDate: followUpDate,
             remarks: remarks,
             createdUser: decoded.id,
-            createdDate: new Date()
+            createdDate: new Date(),
         });
 
         return res.status(200).json({
-            message : "Inquiry saved sucesfully"
+            message : "Inquiry saved successfully",
+            data: mapInquiryToResponse(newInquiry)
         })
 
     } catch(error) {

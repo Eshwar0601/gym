@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth.middleware')
 
 router.get('/getAllInquiryDetails', authMiddleware, authController.getInquiryDetails);
 router.post('/fetchInquiryByUniqueId', authMiddleware, authController.fetchInquiryByUniqueId);
-router.put('/updateInquiryByUniqueId', authMiddleware, authController.updateInquiryByUniqueId);
+router.put('/updateInquiryByInquiryId', authMiddleware, authController.updateInquiryByInquiryId);
 router.post('/saveInquiryDetails', authMiddleware, authController.saveInquiryDetails);
 router.delete('/deleteInquiryDetail', authMiddleware, authController.deleteInquiryDetail);
 
