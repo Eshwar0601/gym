@@ -178,7 +178,7 @@ exports.saveInquiryDetails = async (req, res) => {
 
 exports.deleteInquiryDetail = async (req, res) => {
     const authHeader = req.headers.authorization;
-    const { inquiryId } = req.body;
+    const { inquiryId } = req.query;
 
     if (checkIfValueIsEmpty(inquiryId)) {
         return res.status(400).json({
