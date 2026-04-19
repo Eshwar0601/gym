@@ -35,8 +35,9 @@ exports.getMiscMaster = async (req, res) => {
           keyValuePairs: []
         };
       }
-      // Add keyValuePairs without _id
+      // Add keyValuePairs with _id
       grouped[misc.headerType].keyValuePairs.push(...(misc.keyValuePairs || []).map(kvp => ({
+        _id: kvp._id,
         key: kvp.key,
         value: kvp.value
       })));
@@ -161,7 +162,9 @@ exports.saveMiscMaster = async (req, res) => {
 
 exports.deleteMiscMaster = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { miscMasterId } = req.body;
+  const { miscMasterId } = req.query;
+
+  console.log("iiiiiiiiiiiddddddddddddddddddddd", miscMasterId)
 
   if (checkIfValueIsEmpty(miscMasterId)) {
     return res.status(400).json({ message: "miscMasterId cannot be empty" });
@@ -175,10 +178,18 @@ exports.deleteMiscMaster = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
-    const deleted = await MiscMaster.findOneAndDelete({
-      _id: miscMasterId,
-      createdUser: decoded.id
-    }).exec();
+    const deleted = await MiscMaster.findOneAndUpdate(
+      {
+        createdUser: decoded.id,
+        "keyValuePairs._id": miscMasterId   // find doc containing this item
+      },
+      {
+        $pull: {
+          keyValuePairs: { _id: miscMasterId }
+        }
+      },
+      { new: true }
+    ).exec();
 
     if (!deleted) {
       return res.status(404).json({ message: "MiscMaster not found or not authorized to delete" });

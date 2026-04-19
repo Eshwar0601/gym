@@ -190,7 +190,7 @@ exports.savePackageDetails = async (req, res) => {
 
 exports.deletePackageDetail = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { packageId } = req.body;
+  const { packageId } = req.query;
 
   if (checkIfValueIsEmpty(packageId)) {
     return res.status(400).json({
