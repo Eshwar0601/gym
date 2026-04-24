@@ -2,6 +2,7 @@ const MemberDetail = require('../models/member.model');
 const MemberPackageDetails = require('../models/memberPackageDetails.model');
 const MemberTrainerDetails = require('../models/memberTrainerDetais.model');
 const jwt = require('jsonwebtoken');
+const xlsx = require('xlsx');
 
 const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetails = []) => ({
   _id: mem._id,
@@ -90,6 +91,273 @@ exports.getMemberDetails = async (req, res) => {
     return res.status(500).json({
       error: error.message
     });
+  }
+};
+
+exports.uploadMemberData = async(req, res) => {
+  const authHeader = req.headers.authorization;
+  try {
+    if(!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing" });
+    }
+
+    if(checkIfValueIsEmpty(req.file)) {
+      return res.status(400).json({message: "File cannot be empty"});
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+    
+    // Read the Excel file
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    
+    // Check if there's exactly one sheet
+    const sheetNames = workbook.SheetNames;
+    if (sheetNames.length !== 1) {
+      return res.status(400).json({ message: "Excel file must contain exactly one sheet" });
+    }
+    
+    const sheetName = sheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON
+    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+    
+    if (jsonData.length === 0) {
+      return res.status(400).json({ message: "Excel file contains no data" });
+    }
+    
+    // Define expected columns (only the columns shown in the form)
+    const expectedColumns = [
+      'memberNo', 'fullName', 'email', 'mobileNumber', 'dateOfBirth', 'occupation',
+      'joinDate', 'gender', 'age', 'maritalStatus', 'address', 'shiftType', 'joinWeight'
+    ];
+    
+    // Check if all expected columns are present in the first row
+    const firstRow = jsonData[0];
+    const missingColumns = expectedColumns.filter(col => !(col in firstRow));
+    if (missingColumns.length > 0) {
+      return res.status(400).json({ 
+        message: `Missing required columns: ${missingColumns.join(', ')}` 
+      });
+    }
+    
+    // Validate data and prepare for batch processing
+    const validMembers = [];
+    const errors = [];
+    
+    for (let i = 0; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      const rowNumber = i + 2; // +2 because Excel rows start at 1 and we have header
+      
+      // Validate required fields
+      const validationErrors = [];
+      
+      if (checkIfValueIsEmpty(row.memberNo)) {
+        validationErrors.push('memberNo is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.fullName)) {
+        validationErrors.push('fullName is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.dateOfBirth)) {
+        validationErrors.push('dateOfBirth is required');
+      } else {
+        // Validate date format
+        const date = new Date(row.dateOfBirth);
+        if (isNaN(date.getTime())) {
+          validationErrors.push('dateOfBirth must be a valid date');
+        }
+      }
+      
+      if (checkIfValueIsEmpty(row.gender)) {
+        validationErrors.push('gender is required');
+      } else if (!['Male', 'Female'].includes(row.gender)) {
+        validationErrors.push('gender must be Male or Female');
+      }
+      
+      if (checkIfValueIsEmpty(row.occupation)) {
+        validationErrors.push('occupation is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.joinDate)) {
+        validationErrors.push('joinDate is required');
+      } else {
+        const date = new Date(row.joinDate);
+        if (isNaN(date.getTime())) {
+          validationErrors.push('joinDate must be a valid date');
+        }
+      }
+      
+      if (checkIfValueIsEmpty(row.age)) {
+        validationErrors.push('age is required');
+      } else if (isNaN(parseInt(row.age))) {
+        validationErrors.push('age must be a valid number');
+      }
+      
+      if (checkIfValueIsEmpty(row.maritalStatus)) {
+        validationErrors.push('maritalStatus is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.address)) {
+        validationErrors.push('address is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.shiftType)) {
+        validationErrors.push('shiftType is required');
+      }
+      
+      if (checkIfValueIsEmpty(row.joinWeight)) {
+        validationErrors.push('joinWeight is required');
+      } else if (isNaN(parseFloat(row.joinWeight))) {
+        validationErrors.push('joinWeight must be a valid number');
+      }
+      
+      if (validationErrors.length > 0) {
+        errors.push({
+          row: rowNumber,
+          memberNo: row.memberNo || 'N/A',
+          errors: validationErrors
+        });
+      } else {
+        // Check for duplicate memberNo in the file
+        const duplicateInFile = validMembers.some(m => m.memberNo === row.memberNo);
+        if (duplicateInFile) {
+          errors.push({
+            row: rowNumber,
+            memberNo: row.memberNo,
+            errors: ['memberNo is duplicated in the file']
+          });
+        } else {
+          // Prepare member data
+          const memberData = {
+            memberNo: row.memberNo,
+            fullName: row.fullName,
+            email: row.email || '',
+            mobileNumber: row.mobileNumber || '',
+            dateOfBirth: new Date(row.dateOfBirth),
+            gender: row.gender,
+            inquiryDate: new Date(),
+            occupation: row.occupation,
+            joinDate: new Date(row.joinDate),
+            joinWeight: parseFloat(row.joinWeight),
+            joinHeight: null,
+            age: parseInt(row.age),
+            period: '',
+            personalTrainer: '',
+            ptAmount: null,
+            maritalStatus: row.maritalStatus,
+            address: row.address,
+            shiftType: row.shiftType,
+            time: '',
+            paidDate: null,
+            dueDate: null,
+            remarks: '',
+            createdUser: decoded.id,
+            createdDate: new Date()
+          };
+          
+          validMembers.push(memberData);
+        }
+      }
+    }
+    
+    // If there are validation errors, return them
+    if (errors.length > 0) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors
+      });
+    }
+    
+    // Check for duplicate memberNo in database
+    const memberNos = validMembers.map(m => m.memberNo);
+    const existingMembers = await MemberDetail.find({
+      memberNo: { $in: memberNos },
+      createdUser: decoded.id
+    }).select('memberNo').exec();
+    
+    const existingMemberNos = existingMembers.map(m => m.memberNo);
+    const duplicateErrors = [];
+    
+    validMembers.forEach((member, index) => {
+      if (existingMemberNos.includes(member.memberNo)) {
+        duplicateErrors.push({
+          row: index + 2,
+          memberNo: member.memberNo,
+          errors: ['memberNo already exists in database']
+        });
+      }
+    });
+    
+    if (duplicateErrors.length > 0) {
+      return res.status(400).json({
+        message: 'Duplicate member numbers found in database',
+        errors: duplicateErrors
+      });
+    }
+    
+    // Batch process members (100 at a time for performance)
+    const batchSize = 100;
+    const results = [];
+    const batchErrors = [];
+    
+    for (let i = 0; i < validMembers.length; i += batchSize) {
+      const batch = validMembers.slice(i, i + batchSize);
+      
+      try {
+        const savedMembers = await MemberDetail.insertMany(batch, { ordered: false });
+        results.push(...savedMembers.map(member => ({
+          _id: member._id,
+          memberNo: member.memberNo,
+          fullName: member.fullName,
+          status: 'success'
+        })));
+      } catch (batchError) {
+        // Handle partial batch failures
+        if (batchError.writeErrors) {
+          batchError.writeErrors.forEach(writeError => {
+            const failedMember = batch[writeError.index];
+            batchErrors.push({
+              memberNo: failedMember.memberNo,
+              error: writeError.errmsg
+            });
+          });
+          
+          // Add successful inserts from this batch
+          const successfulInserts = batch.filter((_, index) => 
+            !batchError.writeErrors.some(err => err.index === index)
+          );
+          results.push(...successfulInserts.map(member => ({
+            _id: member._id,
+            memberNo: member.memberNo,
+            fullName: member.fullName,
+            status: 'success'
+          })));
+        } else {
+          // Complete batch failure
+          batch.forEach(member => {
+            batchErrors.push({
+              memberNo: member.memberNo,
+              error: batchError.message
+            });
+          });
+        }
+      }
+    }
+    
+    return res.status(200).json({
+      message: `Processed ${validMembers.length} members`,
+      successful: results.length,
+      failed: batchErrors.length,
+      data: results,
+      errors: batchErrors.length > 0 ? batchErrors : undefined
+    });
+    
+  } catch (error) {
+    console.error('Upload error:', error);
+    return res.status(500).json({ error: error.message });
   }
 };
 
