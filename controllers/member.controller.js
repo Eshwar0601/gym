@@ -3,6 +3,8 @@ const MemberPackageDetails = require('../models/memberPackageDetails.model');
 const MemberTrainerDetails = require('../models/memberTrainerDetais.model');
 const jwt = require('jsonwebtoken');
 const xlsx = require('xlsx');
+const cloudinary = require('./../config/cloudinary');
+const streamifier = require('streamifier');
 
 const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetails = []) => ({
   _id: mem._id,
@@ -30,6 +32,8 @@ const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetail
   shiftType: mem.shiftType || '',
   time: mem.time || '',
   paidDate: mem.paidDate || null,
+  userImageUrl: mem.userImageUrl || null,
+  userImageId: mem.userImageId || null,
   createdUser: mem.createdUser,
   createdDate: mem.createdDate
 });
@@ -361,6 +365,106 @@ exports.uploadMemberData = async(req, res) => {
   }
 };
 
+
+
+exports.uploadUserImage = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const {uniqueId} = req.body;
+
+  try {
+    if(!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing" });
+    }
+
+    if(checkIfValueIsEmpty(req.file)) {
+      return res.status(400).json({message: "File cannot be empty"});
+    }
+
+    if(!uniqueId) {
+      return res.status(400).json({message: "Unique id cannot be empty"});
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+    const member = await MemberDetail.findOne({
+      createdUser: decoded.id,
+      $or: [{ _id: uniqueId }, { memberNo: uniqueId }]
+    }).exec();
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    // Delete previous image if exists
+    if (member.userImageId) {
+      await cloudinary.uploader.destroy(member.userImageId);
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      let stream = cloudinary.uploader.upload_stream((error, result) => {
+        if (result) resolve(result); else reject(error);
+      });
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
+    });
+
+    const updatedMemberWithImage = await MemberDetail.findOneAndUpdate(
+      { _id: member._id, createdUser: decoded.id },
+      {
+        userImageUrl: result.secure_url,
+        userImageId: result.public_id
+      },
+      { new: true }
+    );
+
+    res.status(200).json({
+      message: "Profile photo updated!",
+      member: updatedMemberWithImage
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+exports.deleteUserImage = async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const { uniqueId } = req.body;
+
+  try {
+    if (!authHeader) {
+      return res.status(401).json({ message: "Authorization header missing" });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+    const member = await MemberDetail.findOne({
+      createdUser: decoded.id,
+      $or: [{ _id: uniqueId }, { memberNo: uniqueId }]
+    }).exec();
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    if (member.userImageId) {
+      await cloudinary.uploader.destroy(member.userImageId);
+      await MemberDetail.findOneAndUpdate(
+        { _id: member._id, createdUser: decoded.id },
+        { userImageUrl: null, userImageId: null },
+        { new: true }
+      );
+      return res.status(200).json({ message: "Image deleted successfully" });
+    } else {
+      return res.status(400).json({ message: "No image to delete" });
+    }
+
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 exports.fetchMemberByUniqueId = async (req, res) => {
   const authHeader = req.headers.authorization;
   const { uniqueId } = req.body;
@@ -673,6 +777,11 @@ exports.deleteMemberDetail = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ message: "Member not found or not authorized to delete" });
     }
+
+    if (deleted.userImageId) {
+      await cloudinary.uploader.destroy(deleted.userImageId);
+    }
+
     await MemberPackageDetails.deleteMany({ memberID: memberId, createdUser: decoded.id});
 
     await MemberTrainerDetails.deleteMany({ memberID: memberId, createdUser: decoded.id})

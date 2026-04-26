@@ -79,6 +79,12 @@ const memberDetailsSchema = new mongoose.Schema({
   time: {
     type: String
   },
+  userImageUrl : {
+    type: String
+  },
+  userImageId : {
+    type: String
+  },
   // paidDate: {
   //   type: Date
   // },

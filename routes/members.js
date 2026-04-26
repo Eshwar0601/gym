@@ -18,6 +18,10 @@ router.post('/fetchMemberByUniqueId', authMiddleware, memberController.fetchMemb
 
 router.post('/uploadMemberData', authMiddleware, upload.single('file'), memberController.uploadMemberData);
 
+router.post('/uploadUserImage', authMiddleware, upload.single('file'), memberController.uploadUserImage);
+
+router.post('/deleteUserImage', authMiddleware, memberController.deleteUserImage);
+
 // Update a member by uniqueId
 router.put('/updateMemberByUniqueId', authMiddleware, memberController.updateMemberByUniqueId);
 
