@@ -35,6 +35,7 @@ const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetail
   paidDate: mem.paidDate || null,
   userImageUrl: mem.userImageUrl || null,
   userImageId: mem.userImageId || null,
+  memberDueDate: mem.memberDueDate || null,
   createdUser: mem.createdUser,
   createdDate: mem.createdDate
 });
@@ -282,6 +283,7 @@ exports.uploadMemberData = async(req, res) => {
             paidDate: null,
             dueDate: null,
             remarks: '',
+            memberDueDate: row.memberDueDate ? new Date(row.memberDueDate) : null,
             createdUser: decoded.id,
             createdDate: new Date()
           };
@@ -560,7 +562,8 @@ exports.updateMemberByUniqueId = async (req, res) => {
     address,
     shiftType,
     time,
-    paidDate
+    paidDate,
+    memberDueDate
   } = req.body;
 
   if (checkIfValueIsEmpty(uniqueId)) {
@@ -598,6 +601,7 @@ exports.updateMemberByUniqueId = async (req, res) => {
     if (shiftType !== undefined) updateData.shiftType = shiftType;
     if (time !== undefined) updateData.time = time;
     if (paidDate !== undefined) updateData.paidDate = paidDate;
+    if (memberDueDate !== undefined) updateData.memberDueDate = memberDueDate;
 
     // Find the member first
     const member = await MemberDetail.findOne({
@@ -671,7 +675,8 @@ exports.saveMemberDetails = async (req, res) => {
     maritalStatus = '',
     address = '',
     shiftType = '',
-    time = ''
+    time = '',
+    memberDueDate = null
   } = req.body;
 
   // Validate required fields
@@ -750,6 +755,7 @@ exports.saveMemberDetails = async (req, res) => {
       address,
       shiftType,
       time,
+      memberDueDate,
       createdUser: decoded.id,
       createdDate: new Date()
     });
