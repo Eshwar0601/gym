@@ -1,4 +1,5 @@
 const PackageDetail = require('../models/memberPackageDetails.model');
+const PaymentDetails = require('../models/payment.model');
 const jwt = require('jsonwebtoken');
 
 const mapMemberPackageToResponse = (pkg) => ({
@@ -216,6 +217,9 @@ exports.deleteMemberPackageDetail = async (req, res) => {
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
+
+    // Delete associated payment details first
+    await PaymentDetails.deleteMany({ memberPackageId: packageId });
 
     const deleted = await PackageDetail.findOneAndDelete({ _id: packageId, createdUser: decoded.id }).exec();
     if (!deleted) {

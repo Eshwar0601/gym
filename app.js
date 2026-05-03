@@ -14,7 +14,8 @@ var staffRouter = require('./routes/staff');
 var miscMasterRouter = require('./routes/miscMaster');
 var packageRouter = require('./routes/package');
 var memberDetailsPackage = require('./routes/memberPackageDetails');
-var memberTrainerDetails = require('./routes/memberTrainerDetails')
+var memberTrainerDetails = require('./routes/memberTrainerDetails');
+var paymentDetails = require('./routes/payment');
 
 var app = express();
 
@@ -51,6 +52,7 @@ app.use('/miscMaster', miscMasterRouter);
 app.use('/package', packageRouter);
 app.use('/memberDetailsPackage', memberDetailsPackage);
 app.use('/memberTrainerDetails', memberTrainerDetails);
+app.use('/payment', paymentDetails);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

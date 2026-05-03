@@ -1,6 +1,7 @@
 const MemberDetail = require('../models/member.model');
 const MemberPackageDetails = require('../models/memberPackageDetails.model');
 const MemberTrainerDetails = require('../models/memberTrainerDetais.model');
+const Payment = require('../models/payment.model');
 const jwt = require('jsonwebtoken');
 const xlsx = require('xlsx');
 const cloudinary = require('./../config/cloudinary');
@@ -52,10 +53,33 @@ exports.getMemberDetails = async (req, res) => {
     
     // Fetch member package details for all members
     const memberIds = listOfMembers.map(mem => mem._id);
-    const memberPackageDetails = await MemberPackageDetails.find({
+    let memberPackageDetails = await MemberPackageDetails.find({
       memberID: { $in: memberIds },
       createdUser: decoded.id
     }).exec();
+    
+    // Fetch payments for all packages
+    const packageIds = memberPackageDetails.map(pkg => pkg._id);
+    const payments = await Payment.find({ memberPackageId: { $in: packageIds } }).exec();
+    
+    // Group payments by packageId
+    const paymentMap = {};
+    payments.forEach(payment => {
+      const pkgId = payment.memberPackageId.toString();
+      if (!paymentMap[pkgId]) paymentMap[pkgId] = [];
+      paymentMap[pkgId].push(payment);
+    });
+    
+    // Enrich memberPackageDetails with status and paymentDetails
+    memberPackageDetails = memberPackageDetails.map(pkg => {
+      const pkgId = pkg._id.toString();
+      const pkgPayments = paymentMap[pkgId] || [];
+      const totalPaid = pkgPayments.reduce((sum, p) => sum + p.amount, 0);
+      const plainPkg = pkg.toObject();
+      plainPkg.status = plainPkg.discountedPrice && totalPaid === plainPkg.discountedPrice ? 'DONE' : 'PENDING';
+      plainPkg.paymentDetails = pkgPayments;
+      return plainPkg;
+    });
     
     const packageDetailsMap = {};
     memberPackageDetails.forEach(pkg => {
