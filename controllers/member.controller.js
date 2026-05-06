@@ -193,9 +193,8 @@ exports.uploadMemberData = async(req, res) => {
       if (checkIfValueIsEmpty(row.dateOfBirth)) {
         validationErrors.push('dateOfBirth is required');
       } else {
-        // Validate date format
-        const date = new Date(row.dateOfBirth);
-        if (isNaN(date.getTime())) {
+        const parsedDateOfBirth = parseExcelDateValue(row.dateOfBirth);
+        if (!parsedDateOfBirth) {
           validationErrors.push('dateOfBirth must be a valid date');
         }
       }
@@ -213,8 +212,8 @@ exports.uploadMemberData = async(req, res) => {
       if (checkIfValueIsEmpty(row.joinDate)) {
         validationErrors.push('joinDate is required');
       } else {
-        const date = new Date(row.joinDate);
-        if (isNaN(date.getTime())) {
+        const parsedJoinDate = parseExcelDateValue(row.joinDate);
+        if (!parsedJoinDate) {
           validationErrors.push('joinDate must be a valid date');
         }
       }
@@ -265,11 +264,11 @@ exports.uploadMemberData = async(req, res) => {
             fullName: row.fullName,
             email: row.email || '',
             mobileNumber: row.mobileNumber || '',
-            dateOfBirth: new Date(row.dateOfBirth),
+            dateOfBirth: parseExcelDateValue(row.dateOfBirth),
             gender: row.gender,
             inquiryDate: new Date(),
             occupation: row.occupation,
-            joinDate: new Date(row.joinDate),
+            joinDate: parseExcelDateValue(row.joinDate),
             joinWeight: parseFloat(row.joinWeight),
             joinHeight: null,
             age: parseInt(row.age),
@@ -283,7 +282,7 @@ exports.uploadMemberData = async(req, res) => {
             paidDate: null,
             dueDate: null,
             remarks: '',
-            memberDueDate: row.memberDueDate ? new Date(row.memberDueDate) : null,
+            memberDueDate: row.memberDueDate ? parseExcelDateValue(row.memberDueDate) : null,
             createdUser: decoded.id,
             createdDate: new Date()
           };
@@ -822,6 +821,44 @@ exports.deleteMemberDetail = async (req, res) => {
       error: error.message
     });
   }
+};
+
+const parseExcelDateValue = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value === 'number') {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const days = Math.floor(value);
+    const milliseconds = Math.round((value - days) * 86400000);
+    const serialDays = days > 60 ? days - 1 : days; // Excel leap year bug for 1900
+    const parsed = new Date(excelEpoch.getTime() + serialDays * 86400000 + milliseconds);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const normalizedValue = String(value).trim();
+
+  const ymdMatch = normalizedValue.match(/^\s*(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s*$/);
+  if (ymdMatch) {
+    const [, year, month, day] = ymdMatch;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const dmyMatch = normalizedValue.match(/^\s*(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s*$/);
+  if (dmyMatch) {
+    const [, day, month, year] = dmyMatch;
+    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const fallback = new Date(normalizedValue);
+  return isNaN(fallback.getTime()) ? null : fallback;
 };
 
 const checkIfValueIsEmpty = (value) => (value === '' || value === null || value === undefined);
