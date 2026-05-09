@@ -42,6 +42,14 @@ const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetail
 
 exports.getMemberDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
+  const limit = req.query.limit;
+  const page = req.query.page;
+  const skipIndex = (page - 1) * limit;
+  const memberNo = req.query.memberNo;
+  const fullName = req.query.fullName;
+  const email = req.query.email;
+  const mobileNumber = req.query.mobileNumber;
+
   try {
     if (!authHeader) {
       return res.status(401).json({ message: "Authorization header missing" });
@@ -49,8 +57,13 @@ exports.getMemberDetails = async (req, res) => {
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
-    
-    const listOfMembers = await MemberDetail.find({ createdUser: decoded.id }).exec();
+    const query = { createdUser: decoded.id };
+    if (memberNo) query.memberNo = memberNo;
+    if (fullName) query.fullName = { $regex: fullName, $options: 'i' };
+    if (email) query.email = email;
+    if (mobileNumber) query.mobileNumber = mobileNumber;
+
+    const listOfMembers = await MemberDetail.find(query).sort({ _id: 1 }).limit(limit).skip(skipIndex);
     
     // Fetch member package details for all members
     const memberIds = listOfMembers.map(mem => mem._id);
@@ -112,9 +125,16 @@ exports.getMemberDetails = async (req, res) => {
       const trainers = trainerDetailsMap[memberId] || [];
       return mapMemberToResponse(mem, packages, trainers);
     });
+
+    const totalItems = await MemberDetail.countDocuments({ createdUser: decoded.id });
+    const totalPages = Math.ceil(totalItems / limit);
     
     return res.status(200).json({
-      data: membersWithDefaults
+      data: membersWithDefaults,
+      totalItems,
+      totalPages,
+      currentPage: page,
+      limit
     });
   } catch (error) {
     return res.status(500).json({
