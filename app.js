@@ -16,6 +16,7 @@ var packageRouter = require('./routes/package');
 var memberDetailsPackage = require('./routes/memberPackageDetails');
 var memberTrainerDetails = require('./routes/memberTrainerDetails');
 var paymentDetails = require('./routes/payment');
+var dashboardRouter = require('./routes/dashboard');
 
 var app = express();
 
@@ -23,10 +24,6 @@ var app = express();
 mongoose.connect('mongodb+srv://admin:1234@cluster0.bdpjfdh.mongodb.net/?appName=Cluster0')
   .then(() => {
     console.log("MongoDB connected")
-
-    app.listen(process.env.PORT || 5000, () => {
-      console.log("MongoDB Server running")
-    })
   })
   .catch(err => {
     console.error("MongoDB connection error:", err)
@@ -53,6 +50,7 @@ app.use('/package', packageRouter);
 app.use('/memberDetailsPackage', memberDetailsPackage);
 app.use('/memberTrainerDetails', memberTrainerDetails);
 app.use('/payment', paymentDetails);
+app.use('/api/dashboard', dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
