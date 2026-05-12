@@ -57,10 +57,23 @@ const getBirthdaysThisMonth = async (userId) => {
   const month = now.getMonth() + 1;
   const birthdays = await MemberDetail.aggregate([
     { $match: { createdUser: new mongoose.Types.ObjectId(userId), dateOfBirth: { $exists: true, $ne: null } } },
-    { $addFields: { birthMonth: { $month: '$dateOfBirth' } } },
+    { $addFields: { birthMonth: { $month: '$dateOfBirth' }, birthDate: { $dayOfMonth: '$dateOfBirth' } } },
     { $match: { birthMonth: month } },
     { $project: { _id: 1, memberName: '$fullName', mobileNumber: 1, dateOfBirth: 1 } },
     { $sort: { dateOfBirth: 1 } }
+  ]).exec();
+  return birthdays;
+};
+
+const getBirthdayToday = async (userId) => {
+  const now = new Date();
+  const today = now.getDate();
+  const month = now.getMonth() + 1;
+  const birthdays = await MemberDetail.aggregate([
+    { $match: { createdUser: new mongoose.Types.ObjectId(userId), dateOfBirth: { $exists: true, $ne: null } } },
+    { $addFields: { birthMonth: { $month: '$dateOfBirth' }, birthDate: { $dayOfMonth: '$dateOfBirth' } } },
+    { $match: { birthMonth: month, birthDate: today } },
+    { $project: { _id: 1, memberName: '$fullName', mobileNumber: 1, dateOfBirth: 1 } }
   ]).exec();
   return birthdays;
 };
@@ -202,6 +215,7 @@ exports.getDashboardSummary = async (userId, query) => {
     conversionCountWeek,
     conversionCountMonth,
     birthdaysThisMonth,
+    birthdayToday,
     packageSummary
   ] = await Promise.all([
     getNewMembersToday(userId),
@@ -217,6 +231,7 @@ exports.getDashboardSummary = async (userId, query) => {
     getConversionCount(userId, 'week'),
     getConversionCount(userId, 'month'),
     getBirthdaysThisMonth(userId),
+    getBirthdayToday(userId),
     getPackageSummaries(userId, rangeStart, rangeEnd)
   ]);
 
@@ -240,6 +255,7 @@ exports.getDashboardSummary = async (userId, query) => {
       inquiryCountMonth
     },
     birthdaysThisMonth,
+    birthdayToday,
     pendingPayments: packageSummary.pendingPayments,
     upcomingDues: packageSummary.upcomingDues,
     expiringPackages: packageSummary.expiringPackages
