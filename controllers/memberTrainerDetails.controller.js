@@ -11,6 +11,7 @@ const mapMemberTrainerToResponse = (savedTrainer) => ({
   remarks: savedTrainer.remarks || '',
   amount: savedTrainer.amount || '',
   ptName: savedTrainer.ptName || '',
+  trainer: savedTrainer.trainer || null,
   createdUser: savedTrainer.createdUser,
   createdDate: savedTrainer.createdDate
 });
@@ -25,7 +26,7 @@ exports.getMemberTrainerDetails = async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
-    const listOfTrainers = await trainerModel.find({ createdUser: decoded.id }).exec();
+    const listOfTrainers = await trainerModel.find({ createdUser: decoded.id }).populate('trainer').exec();
     const trainersWithDefaults = listOfTrainers.map(mapMemberTrainerToResponse);
     return res.status(200).json({
       data: trainersWithDefaults
@@ -72,6 +73,7 @@ exports.updateMemberTrainerByUniqueId = async (req, res) => {
     if (remarks !== undefined) updateData.remarks = remarks;
     if (amount !== undefined) updateData.amount = amount;
     if (ptName !== undefined) updateData.ptName = ptName;
+    if (req.body.trainer !== undefined) updateData.trainer = req.body.trainer;
 
     const updatedPackage = await trainerModel.findOneAndUpdate(
       { _id: uniqueId, createdUser: decoded.id },
@@ -118,6 +120,7 @@ exports.saveMemberTrainerDetails = async (req, res) => {
     const newPackage = await trainerModel.create({
       memberNo,
       memberID,
+      trainer: req.body.trainer || null,
       duration,
       startDate,
       endDate,

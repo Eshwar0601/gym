@@ -20,6 +20,18 @@ const staffDetailsSchema = new mongoose.Schema({
   staffRating: {
     type: Number
   },
+  userImageUrl : {
+    type: String
+  },
+  userImageId : {
+    type: String
+  },
+  emergencyContactName: {
+    type: String
+  },
+  emergencyContactNumber: {
+    type: String
+  },
   createdUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

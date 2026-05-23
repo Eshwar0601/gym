@@ -28,6 +28,10 @@ const trainerSchema = new mongoose.Schema({
     ptName: {
         type: String
     },
+    trainer: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'StaffDetail'
+    },
     createdDate: {
         type: Date,
         default: Date.now

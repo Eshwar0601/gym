@@ -88,6 +88,9 @@ const memberDetailsSchema = new mongoose.Schema({
   memberDueDate: {
     type: Date
   },
+  referenceNumber: {
+    type: String
+  },
   // paidDate: {
   //   type: Date
   // },

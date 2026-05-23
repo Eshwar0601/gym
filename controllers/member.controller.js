@@ -36,6 +36,7 @@ const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetail
   userImageUrl: mem.userImageUrl || null,
   userImageId: mem.userImageId || null,
   memberDueDate: mem.memberDueDate || null,
+  referenceNumber: mem.referenceNumber || null,
   createdUser: mem.createdUser,
   createdDate: mem.createdDate
 });
@@ -582,7 +583,8 @@ exports.updateMemberByUniqueId = async (req, res) => {
     shiftType,
     time,
     paidDate,
-    memberDueDate
+    memberDueDate,
+    referenceNumber,
   } = req.body;
 
   if (checkIfValueIsEmpty(uniqueId)) {
@@ -621,6 +623,7 @@ exports.updateMemberByUniqueId = async (req, res) => {
     if (time !== undefined) updateData.time = time;
     if (paidDate !== undefined) updateData.paidDate = paidDate;
     if (memberDueDate !== undefined) updateData.memberDueDate = memberDueDate;
+    if (referenceNumber !== undefined) updateData.referenceNumber = referenceNumber;
 
     // Find the member first
     const member = await MemberDetail.findOne({
@@ -640,6 +643,14 @@ exports.updateMemberByUniqueId = async (req, res) => {
       }).exec();
       if (existingMember) {
         return res.status(400).json({ message: "Member number already exists" });
+      }
+    }
+
+    // Validate referenceNumber if provided - it must match at least one memberNo
+    if (referenceNumber !== undefined && referenceNumber !== null && referenceNumber !== '') {
+      const refExists = await MemberDetail.findOne({ memberNo: referenceNumber, createdUser: decoded.id }).exec();
+      if (!refExists) {
+        return res.status(400).json({ message: "referenceNumber must match an existing memberNo" });
       }
     }
 
@@ -695,7 +706,8 @@ exports.saveMemberDetails = async (req, res) => {
     address = '',
     shiftType = '',
     time = '',
-    memberDueDate = null
+    memberDueDate = null,
+    referenceNumber = null
   } = req.body;
 
   // Validate required fields
@@ -752,6 +764,13 @@ exports.saveMemberDetails = async (req, res) => {
 
 
     console.log("created User", decoded.id);
+    // Validate referenceNumber if provided
+    if (referenceNumber !== null && referenceNumber !== undefined && referenceNumber !== '') {
+      const refExists = await MemberDetail.findOne({ memberNo: referenceNumber, createdUser: decoded.id }).exec();
+      if (!refExists) {
+        return res.status(400).json({ message: "referenceNumber must match an existing memberNo" });
+      }
+    }
     const newMember = await MemberDetail.create({
       memberNo,
       fullName,
@@ -775,6 +794,7 @@ exports.saveMemberDetails = async (req, res) => {
       shiftType,
       time,
       memberDueDate,
+      referenceNumber,
       createdUser: decoded.id,
       createdDate: new Date()
     });
