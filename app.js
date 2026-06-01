@@ -21,7 +21,7 @@ var dashboardRouter = require('./routes/dashboard');
 var app = express();
 
 // DB connection
-mongoose.connect('mongodb+srv://admin:1234@cluster0.bdpjfdh.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://newadmin:newadmin@cluster0.bdpjfdh.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority')
   .then(() => {
     console.log("MongoDB connected")
   })
