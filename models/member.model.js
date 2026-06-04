@@ -91,6 +91,9 @@ const memberDetailsSchema = new mongoose.Schema({
   referenceNumber: {
     type: String
   },
+  punchInCode: {
+    type: String
+  },
   // paidDate: {
   //   type: Date
   // },

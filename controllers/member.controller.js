@@ -37,6 +37,7 @@ const mapMemberToResponse = (mem, memberPackageDetails = [], memberTrainerDetail
   userImageId: mem.userImageId || null,
   memberDueDate: mem.memberDueDate || null,
   referenceNumber: mem.referenceNumber || null,
+  punchInCode: mem.punchInCode || null,
   createdUser: mem.createdUser,
   createdDate: mem.createdDate
 });
@@ -585,6 +586,7 @@ exports.updateMemberByUniqueId = async (req, res) => {
     paidDate,
     memberDueDate,
     referenceNumber,
+    punchInCode,
   } = req.body;
 
   if (checkIfValueIsEmpty(uniqueId)) {
@@ -624,6 +626,7 @@ exports.updateMemberByUniqueId = async (req, res) => {
     if (paidDate !== undefined) updateData.paidDate = paidDate;
     if (memberDueDate !== undefined) updateData.memberDueDate = memberDueDate;
     if (referenceNumber !== undefined) updateData.referenceNumber = referenceNumber;
+    if (punchInCode !== undefined) updateData.punchInCode = punchInCode;
 
     // Find the member first
     const member = await MemberDetail.findOne({
@@ -707,7 +710,8 @@ exports.saveMemberDetails = async (req, res) => {
     shiftType = '',
     time = '',
     memberDueDate = null,
-    referenceNumber = null
+    referenceNumber = null,
+    punchInCode = null
   } = req.body;
 
   // Validate required fields
@@ -795,6 +799,7 @@ exports.saveMemberDetails = async (req, res) => {
       time,
       memberDueDate,
       referenceNumber,
+      punchInCode,
       createdUser: decoded.id,
       createdDate: new Date()
     });
