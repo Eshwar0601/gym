@@ -146,7 +146,7 @@ exports.saveStaffDetails = async (req, res) => {
       return res.status(400).json({ message: "Staff with this email already exists" });
     }
 
-    await StaffDetail.create({
+    const newStaff = await StaffDetail.create({
       staffName,
       email,
       phoneNumber,
@@ -158,7 +158,10 @@ exports.saveStaffDetails = async (req, res) => {
       createdDate: new Date()
     });
 
-    return res.status(200).json({ message: "Staff saved successfully" });
+    return res.status(200).json({ 
+      data: mapStaffToResponse(newStaff, [], []),
+      message: "Staff saved successfully" 
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
