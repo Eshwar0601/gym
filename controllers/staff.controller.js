@@ -5,8 +5,15 @@ const streamifier = require('streamifier');
 
 const mapStaffToResponse = (staff) => ({
   _id: staff._id,
+  staffCode: staff.staffCode,
   staffName: staff.staffName,
   email: staff.email,
+  age: staff.age,
+  dateOfBirth: staff.dateOfBirth,
+  joinDate: staff.joinDate,
+  leftDate: staff.leftDate,
+  designation: staff.designation,
+  address: staff.address,
   phoneNumber: staff.phoneNumber,
   expertise: staff.expertise || '',
   staffRating: staff.staffRating || null,
@@ -75,7 +82,7 @@ exports.fetchStaffByUniqueId = async (req, res) => {
 
 exports.updateStaffByUniqueId = async (req, res) => {
   const authHeader = req.headers.authorization;
-  const { uniqueId, staffName, email, phoneNumber, expertise, staffRating, emergencyContactName, emergencyContactNumber } = req.body;
+  const { uniqueId, staffCode, staffName, age, dateOfBirth, joinDate, leftDate, designation, address ,email, phoneNumber, expertise, staffRating, emergencyContactName, emergencyContactNumber } = req.body;
 
   if (checkIfValueIsEmpty(uniqueId)) {
     return res.status(400).json({ message: "uniqueId cannot be empty" });
@@ -90,7 +97,14 @@ exports.updateStaffByUniqueId = async (req, res) => {
     const decoded = jwt.verify(token, 'SAMPLE_SECRET');
 
     const updateData = {};
+    if (staffCode !== undefined) updateData.staffCode = staffCode;
     if (staffName !== undefined) updateData.staffName = staffName;
+    if (age !== undefined) updateData.age = age;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (joinDate !== undefined) updateData.joinDate = joinDate;
+    if (leftDate !== undefined) updateData.leftDate = leftDate;
+    if (designation !== undefined) updateData.designation = designation;
+    if (address !== undefined) updateData.address = address;
     if (email !== undefined) updateData.email = email;
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
     if (expertise !== undefined) updateData.expertise = expertise;
@@ -119,7 +133,19 @@ exports.updateStaffByUniqueId = async (req, res) => {
 exports.saveStaffDetails = async (req, res) => {
   const authHeader = req.headers.authorization;
   // Set defaults for optional fields to ensure they're always present
-  const { staffName, email, phoneNumber, expertise = '', staffRating = null, emergencyContactName = '', emergencyContactNumber = '' } = req.body;
+  const { staffCode, staffName, age, dateOfBirth, joinDate, leftDate, designation, address, email, phoneNumber, expertise = '', staffRating = null, emergencyContactName = '', emergencyContactNumber = '' } = req.body;
+
+  if (checkIfValueIsEmpty(staffCode)) {
+    return res.status(400).json({ message: "staffCode cannot be empty" });
+  }
+
+  if (checkIfValueIsEmpty(age)) {
+    return res.status(400).json({ message: "age cannot be empty" });
+  }
+
+  if (checkIfValueIsEmpty(dateOfBirth)) {
+    return res.status(400).json({ message: "dateOfBirth cannot be empty" });
+  }
 
   if (checkIfValueIsEmpty(staffName)) {
     return res.status(400).json({ message: "staffName cannot be empty" });
@@ -147,7 +173,14 @@ exports.saveStaffDetails = async (req, res) => {
     }
 
     const newStaff = await StaffDetail.create({
+      staffCode,
       staffName,
+      age, 
+      dateOfBirth, 
+      joinDate, 
+      leftDate, 
+      designation, 
+      address,
       email,
       phoneNumber,
       expertise,

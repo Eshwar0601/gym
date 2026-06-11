@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const staffDetailsSchema = new mongoose.Schema({
+  staffCode: {
+    type: String,
+    unique: true
+  },
   staffName: {
     type: String,
     required: true
@@ -14,7 +18,26 @@ const staffDetailsSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  age: {
+    type: Number,
+  },
+  dateOfBirth: {
+    type: Date,
+    required: true
+  },
+  joinDate: {
+    type: Date
+  },
+  leftDate: {
+    type: Date
+  },
   expertise: {
+    type: String
+  },
+  designation: {
+    type: String
+  },
+  address: {
     type: String
   },
   staffRating: {
