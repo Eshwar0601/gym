@@ -65,6 +65,55 @@ const getBirthdaysThisMonth = async (userId) => {
   return birthdays;
 };
 
+const getFollowUpsToday = async (userId) => {
+  const now = new Date();
+  const followUps = await Inquiry.find({
+    createdUser: new mongoose.Types.ObjectId(userId),
+    followUpDate: { $gte: startOfDay(now), $lte: endOfDay(now) }
+  })
+    .select('fullName mobileNumber email followUpDate')
+    .sort({ followUpDate: 1 })
+    .lean()
+    .exec();
+
+  return followUps.map((inquiry) => ({
+    name: inquiry.fullName || '',
+    number: inquiry.mobileNumber || '',
+    email: inquiry.email || ''
+  }));
+};
+
+const getExpiringPackagesNext3Days = async (userId) => {
+  const now = new Date();
+  const tomorrowStart = startOfDay(new Date(now.getTime() + DAY_MS));
+  const nextThreeDaysEnd = endOfDay(new Date(now.getTime() + 3 * DAY_MS));
+
+  const packages = await MemberPackageDetails.find({
+    createdUser: new mongoose.Types.ObjectId(userId),
+    isActive: true,
+    endDate: { $gte: tomorrowStart, $lte: nextThreeDaysEnd }
+  })
+    .populate('memberID', 'fullName mobileNumber email')
+    .sort({ endDate: 1 })
+    .lean()
+    .exec();
+
+  return packages.map((pkg) => {
+    const member = pkg.memberID || {};
+    const endDate = toDate(pkg.endDate);
+    const daysLeft = endDate ? Math.ceil((endDate.getTime() - startOfDay(now).getTime()) / DAY_MS) : 0;
+
+    return {
+      memberName: member.fullName || '',
+      phoneNumber: member.mobileNumber || '',
+      email: member.email || '',
+      packageName: pkg.packageName || '',
+      endDate: endDate || null,
+      daysLeft
+    };
+  });
+};
+
 const getBirthdayToday = async (userId) => {
   const now = new Date();
   const today = now.getDate();
@@ -214,8 +263,9 @@ exports.getDashboardSummary = async (userId, query) => {
     conversionCountToday,
     conversionCountWeek,
     conversionCountMonth,
-    birthdaysThisMonth,
     birthdayToday,
+    followUpsToday,
+    expiringPackages,
     packageSummary
   ] = await Promise.all([
     getNewMembersToday(userId),
@@ -230,8 +280,9 @@ exports.getDashboardSummary = async (userId, query) => {
     getConversionCount(userId, 'today'),
     getConversionCount(userId, 'week'),
     getConversionCount(userId, 'month'),
-    getBirthdaysThisMonth(userId),
     getBirthdayToday(userId),
+    getFollowUpsToday(userId),
+    getExpiringPackagesNext3Days(userId),
     getPackageSummaries(userId, rangeStart, rangeEnd)
   ]);
 
@@ -254,10 +305,10 @@ exports.getDashboardSummary = async (userId, query) => {
       inquiryCountWeek,
       inquiryCountMonth
     },
-    birthdaysThisMonth,
     birthdayToday,
+    followUpsToday,
+    expiringPackages,
     pendingPayments: packageSummary.pendingPayments,
-    upcomingDues: packageSummary.upcomingDues,
-    expiringPackages: packageSummary.expiringPackages
+    upcomingDues: packageSummary.upcomingDues
   };
 };
