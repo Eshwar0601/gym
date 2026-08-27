@@ -51,6 +51,7 @@ exports.getMemberDetails = async (req, res) => {
   const fullName = req.query.fullName;
   const email = req.query.email;
   const mobileNumber = req.query.mobileNumber;
+  const punchInCode = req.query.punchInCode;
 
   try {
     if (!authHeader) {
@@ -64,6 +65,7 @@ exports.getMemberDetails = async (req, res) => {
     if (fullName) query.fullName = { $regex: fullName, $options: 'i' };
     if (email) query.email = email;
     if (mobileNumber) query.mobileNumber = mobileNumber;
+    if(punchInCode) query.punchInCode = punchInCode;
 
     const listOfMembers = await MemberDetail.find(query).sort({ _id: 1 }).limit(limit).skip(skipIndex);
     
